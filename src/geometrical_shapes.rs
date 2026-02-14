@@ -43,9 +43,7 @@ impl Drawable for Point {
     }
 
     fn draw(&self, img: &mut Image) {
-        if self.x >= 0 && self.x < img.width && self.y >= 0 && self.y < img.height {
-            img.display(self.x, self.y, self.color());
-        }
+        img.display(self.x, self.y, self.color());
     }
 }
 
@@ -59,13 +57,16 @@ impl Drawable for Point {
 
 #[derive(Debug)]
 pub struct Rectangle {
-    pub x: Point,
-    pub y: Point,
+    pub point1: Point,
+    pub point2: Point,
 }
 
 impl Rectangle {
-    pub fn new(x: &Point, y: &Point) -> Rectangle {
-        Rectangle { x: *x, y: *y }
+    pub fn new(point1: &Point, point2: &Point) -> Rectangle {
+        Rectangle {
+            point1: *point1,
+            point2: *point2,
+        }
     }
 }
 
@@ -78,19 +79,19 @@ impl Drawable for Rectangle {
     }
     fn draw(&self, img: &mut Image) {
         let color = self.color();
-        let start_x = self.x.x.min(self.y.x);
-        let end_x = self.x.x.max(self.y.x);
-        let start_y = self.x.y.min(self.y.y);
-        let end_y = self.x.y.max(self.y.y);
+        let x_min = self.point1.x.min(self.point2.x);
+        let x_max = self.point1.x.max(self.point2.x);
+        let y_min = self.point1.y.min(self.point2.y);
+        let y_max = self.point1.y.max(self.point2.y);
 
-        for i in start_x..=end_x {
-            img.display(i, self.y.y, color.clone());
-            img.display(i, self.x.y, color.clone());
+        for x in x_min..=x_max {
+            img.display(x, y_min, color.clone());
+            img.display(x, y_max, color.clone());
         }
 
-        for i in start_y..=end_y {
-            img.display(self.x.x, i, color.clone());
-            img.display(self.y.x, i, color.clone());
+        for y in y_min..=y_max {
+            img.display(x_min, y, color.clone());
+            img.display(x_max, y, color.clone());
         }
     }
 }
@@ -164,9 +165,7 @@ fn draw_line(img: &mut Image, a: &Point, b: &Point, color: Color) {
         /*&& iterations < max_iterations*/
         {
             if x0 >= 0 && x0 < img.width && y0 >= 0 && y0 < img.height {
-                img.set_pixel(x0, y0, color.clone()).unwrap(); // pub fn new(p1: &Point, p2: &Point) -> Self {
-                                                               //     Line { p1: *p1, p2: *p2 }
-                                                               // }
+                img.set_pixel(x0, y0, color.clone()).unwrap();
             }
             err -= dx;
             if err < 0 {
@@ -261,13 +260,10 @@ impl Drawable for Circle {
     fn draw(&self, img: &mut Image) {
         let color = self.color();
 
-        // Nombre de points = proportionnel au rayon (pour un cercle lisse)
-        let num_points = (2.0 * std::f64::consts::PI * self.radius as f64).ceil() as i32;
-        let num_points = num_points.max(8); // Minimum 8 points
-
-        for i in 0..num_points {
+        let mut i = 0.0;
+        while i < 360.0 {
             // Angle en radians
-            let angle = (i as f64) * 2.0 * std::f64::consts::PI / (num_points as f64);
+            let angle = (i as f64).to_radians();
 
             // Coordonnées sur le cercle
             let x = self.center.x + (self.radius as f64 * angle.cos()).round() as i32;
@@ -277,6 +273,7 @@ impl Drawable for Circle {
             if x >= 0 && x < img.width && y >= 0 && y < img.height {
                 img.set_pixel(x, y, color.clone()).unwrap();
             }
+            i += 0.1; // Incrémenter l'angle
         }
     }
 }
