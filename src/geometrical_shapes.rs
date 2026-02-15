@@ -46,27 +46,95 @@ impl Drawable for Point {
         img.display(self.x, self.y, self.color());
     }
 }
+// ============================
+// LINE
+// ============================
 
-// impl Displayable for Point {
-//     fn display(&mut self, _x: i32, _y: i32, _color: Color) {}
-// }
+pub struct Line {
+    p1: Point,
+    p2: Point,
+    color: Color,
+}
 
+impl Line {
+    pub fn new(p1: Point, p2: Point, color: Color) -> Self {
+        Line {
+            p1: p1,
+            p2: p2,
+            color: color,
+        }
+    }
+
+    pub fn random(width: i32, height: i32) -> Self {
+        let n1 = rand::rng().random_range(0..255);
+        let n2 = rand::rng().random_range(0..255);
+        let n3 = rand::rng().random_range(0..255);
+        let color = Color::rgb(n1, n2, n3);
+
+        Line {
+            p1: Point::random(width, height),
+            p2: Point::random(width, height),
+            color: color,
+        }
+    }
+}
+
+impl Drawable for Line {
+    fn draw(&self, img: &mut Image) {
+        let mut x1 = self.p1.x;
+        let mut y1 = self.p1.y;
+        let x2 = self.p2.x;
+        let y2 = self.p2.y;
+
+        let dx = (x2 - x1).abs();
+        let dy = -(y2 - y1).abs();
+
+        let sx = if x2 < x1 { -1 } else { 1 };
+        let sy = if y2 < y1 { -1 } else { 1 };
+
+        let mut err = dx + dy;
+
+        loop {
+            img.display(x1, y1, self.color.clone());
+
+            if x1 == x2 && y1 == y2 {
+                break;
+            }
+
+            let e2 = 2 * err; // err_float >= 0.5 / 2 => err_int = err_float * dx or / dy => 2 *err >= dy or 2 err <= dx
+
+            if e2 >= dy {
+                err += dy;
+                x1 += sx;
+            }
+
+            if e2 <= dx {
+                err += dx;
+                y1 += sy;
+            }
+        }
+    }
+
+    fn color(&self) -> Color {
+        let n1 = rand::rng().random_range(0..255);
+        let n2 = rand::rng().random_range(0..255);
+        let n3 = rand::rng().random_range(0..255);
+        Color::rgb(n1, n2, n3)
+    }
+}
 // ============================
 //  RECTANGLE
 // ============================
 
 #[derive(Debug)]
 pub struct Rectangle {
-    pub point1: Point,
-    pub point2: Point,
+    pub p1: Point,
+    pub p2: Point,
 }
 
 impl Rectangle {
-    pub fn new(point1: &Point, point2: &Point) -> Rectangle {
-        Rectangle {
-            point1: *point1,
-            point2: *point2,
-        }
+    pub fn new(p1: &Point, p2: &Point) -> Rectangle {
+        Rectangle { p1: *p1, p2: *p2 }
     }
 }
 
@@ -77,12 +145,13 @@ impl Drawable for Rectangle {
         let n3 = rand::rng().random_range(0..255);
         Color::rgb(n1, n2, n3)
     }
+
     fn draw(&self, img: &mut Image) {
         let color = self.color();
-        let x_min = self.point1.x.min(self.point2.x);
-        let x_max = self.point1.x.max(self.point2.x);
-        let y_min = self.point1.y.min(self.point2.y);
-        let y_max = self.point1.y.max(self.point2.y);
+        let x_min = self.p1.x.min(self.p2.x);
+        let x_max = self.p1.x.max(self.p2.x);
+        let y_min = self.p1.y.min(self.p2.y);
+        let y_max = self.p1.y.max(self.p2.y);
 
         for x in x_min..=x_max {
             img.display(x, y_min, color.clone());
@@ -124,106 +193,12 @@ impl Drawable for Triangle {
     }
     fn draw(&self, img: &mut Image) {
         let color = self.color();
-        draw_line(img, &self.a, &self.b, color.clone());
-        draw_line(img, &self.b, &self.c, color.clone());
-        draw_line(img, &self.c, &self.a, color);
+        Line::new(self.a, self.b, color.clone()).draw(img);
+        Line::new(self.b, self.c, color.clone()).draw(img);
+        Line::new(self.c, self.a, color.clone()).draw(img);
     }
 }
-fn draw_line(img: &mut Image, a: &Point, b: &Point, color: Color) {
-    let mut x0 = a.x;
-    let mut y0 = a.y;
-    let x1 = b.x;
-    let y1 = b.y;
 
-    let dx = (x1 - x0).abs();
-    let dy = (y1 - y0).abs();
-    let sx = if x0 < x1 { 1 } else { -1 };
-    let sy = if y0 < y1 { 1 } else { -1 };
-
-    // let max_iterations = (dx + dy) * 2; // Limite le nombre d'itérations pour éviter les boucles infinies
-    // let mut iterations = 0;
-
-    if dx > dy {
-        let mut err = dx / 2;
-        while x0 != x1
-        /*&& iterations < max_iterations*/
-        {
-            if x0 >= 0 && x0 < img.width && y0 >= 0 && y0 < img.height {
-                img.set_pixel(x0, y0, color.clone()).unwrap();
-            }
-            err -= dy;
-            if err < 0 {
-                y0 += sy;
-                err += dx;
-            }
-            x0 += sx;
-            // iterations += 1;
-        }
-    } else {
-        let mut err = dy / 2;
-        while y0 != y1
-        /*&& iterations < max_iterations*/
-        {
-            if x0 >= 0 && x0 < img.width && y0 >= 0 && y0 < img.height {
-                img.set_pixel(x0, y0, color.clone()).unwrap();
-            }
-            err -= dx;
-            if err < 0 {
-                x0 += sx;
-                err += dy;
-            }
-            y0 += sy;
-            // iterations += 1;
-        }
-    }
-
-    // Dessiner le dernier point
-    if x0 >= 0 && x0 < img.width && y0 >= 0 && y0 < img.height {
-        img.display(x0, y0, color);
-    }
-}
-// ============================
-// LINE
-// ============================
-
-pub struct Line {
-    p1: Point,
-    p2: Point,
-}
-impl Line {
-    // pub fn new(p1: &Point, p2: &Point) -> Self {
-    //     Line { p1: *p1, p2: *p2 }
-    // }
-
-    pub fn random(width: i32, height: i32) -> Self {
-        Line {
-            p1: Point::random(width, height),
-            p2: Point::random(width, height),
-        }
-    }
-}
-impl Drawable for Line {
-    fn draw(&self, image: &mut Image) {
-        let color = self.color();
-        let dx = self.p2.x - self.p1.x;
-        let dy = self.p2.y - self.p1.y;
-
-        let steps = dx.abs().max(dy.abs());
-
-        for i in 0..=steps {
-            let x = self.p1.x + i * dx / steps;
-            let y = self.p1.y + i * dy / steps;
-            image.display(x, y, color.clone());
-        }
-    }
-
-    fn color(&self) -> Color {
-        let n1 = rand::rng().random_range(0..255);
-        let n2 = rand::rng().random_range(0..255);
-        let n3 = rand::rng().random_range(0..255);
-        Color::rgb(n1, n2, n3)
-    }
-}
 // ===============================
 //         CIRCLE
 // ===============================
@@ -236,7 +211,7 @@ pub struct Circle {
 impl Circle {
     pub fn new(center: &Point, radius: i32) -> Circle {
         Circle {
-            center: Point::new(center.x, center.y),
+            center: *center,
             radius,
         }
     }
@@ -259,10 +234,9 @@ impl Drawable for Circle {
 
     fn draw(&self, img: &mut Image) {
         let color = self.color();
-
         let mut i = 0.0;
         while i < 360.0 {
-            // Angle en radians
+            // Angle in radians
             let angle = (i as f64).to_radians();
 
             // Coordonnées sur le cercle
@@ -274,6 +248,56 @@ impl Drawable for Circle {
                 img.set_pixel(x, y, color.clone()).unwrap();
             }
             i += 0.1; // Incrémenter l'angle
+        }
+    }
+}
+
+pub struct Pentagon {
+    pub center: Point,
+    pub radius: i32,
+}
+
+impl Pentagon {
+    pub fn new(center: &Point, radius: i32) -> Self {
+        Pentagon {
+            center: *center,
+            radius,
+        }
+    }
+
+    pub fn random(width: i32, height: i32) -> Self {
+        Pentagon {
+            center: Point::random(width, height),
+            radius: rand::rng().random_range(30..250),
+        }
+    }
+}
+
+impl Drawable for Pentagon {
+    fn color(&self) -> Color {
+        let n1 = rand::rng().random_range(0..255);
+        let n2 = rand::rng().random_range(0..255);
+        let n3 = rand::rng().random_range(0..255);
+        Color::rgb(n1, n2, n3)
+    }
+
+    fn draw(&self, img: &mut Image) {
+        let color = self.color();
+        let mut points = Vec::new();
+
+        for i in 0..5 {
+            let angle_deg = i as f64 * 72.0; // 5 points
+            let angle_rad = angle_deg.to_radians(); // convert to radians
+            let x = self.center.x as f64 + self.radius as f64 * angle_rad.cos();
+            let y = self.center.y as f64 + self.radius as f64 * angle_rad.sin();
+            points.push(Point::new(x.round() as i32, y.round() as i32));
+        }
+
+        for i in 0..points.len() {
+            let p1 = &points[i];
+            let p2 = &points[(i + 1) % points.len()]; // wrap around
+            let line = Line::new(*p1, *p2, color.clone());
+            line.draw(img);
         }
     }
 }
