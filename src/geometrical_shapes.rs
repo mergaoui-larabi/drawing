@@ -258,13 +258,7 @@ pub struct Pentagon {
 }
 
 impl Pentagon {
-    pub fn new(center: &Point, radius: i32) -> Self {
-        Pentagon {
-            center: *center,
-            radius,
-        }
-    }
-
+    
     pub fn random(width: i32, height: i32) -> Self {
         Pentagon {
             center: Point::random(width, height),

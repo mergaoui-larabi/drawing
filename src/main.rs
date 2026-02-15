@@ -4,8 +4,6 @@ use geometrical_shapes as gs;
 use gs::{Displayable, Drawable};
 use raster::{Color, Image};
 
-use crate::geometrical_shapes::Line;
-
 fn main() {
     let mut image = Image::blank(1000, 1000);
 
